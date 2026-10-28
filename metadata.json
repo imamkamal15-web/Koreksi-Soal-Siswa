@@ -1,0 +1,6 @@
+{
+  "name": "SmartGrader AI Engine",
+  "description": "Sistem kecerdasan buatan spesialis koreksi penilaian hibrida, analisis miskonsepsi siswa, dan pembuatan laporan hasil belajar resmi siap cetak.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
