@@ -483,6 +483,54 @@ Format Output JSON:
   }
 });
 
+// API 5: Google Apps Script (GAS) Backend Proxy
+app.post('/api/gas/proxy', async (req: Request, res: Response) => {
+  try {
+    const { webAppUrl, action, payload } = req.body;
+
+    if (!webAppUrl || typeof webAppUrl !== 'string' || !webAppUrl.startsWith('https://script.google.com/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL Google Apps Script tidak valid. Pastikan berformat https://script.google.com/macros/s/.../exec',
+      });
+    }
+
+    // Google Apps Script returns a 302 redirect to script.googleusercontent.com
+    // Native fetch follows redirects transparently with redirect: 'follow'
+    const gasResponse = await fetch(webAppUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({
+        action: action || 'PING',
+        payload: payload || {},
+      }),
+      redirect: 'follow',
+    });
+
+    const responseText = await gasResponse.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = {
+        success: gasResponse.ok,
+        message: responseText.slice(0, 300) || 'Respons dari Google Apps Script bukan format JSON.',
+      };
+    }
+
+    return res.json(responseData);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error('GAS Proxy Error:', errorMsg);
+    return res.status(500).json({
+      success: false,
+      message: `Gagal menghubungi Google Apps Script: ${errorMsg}`,
+    });
+  }
+});
+
 // Vite Middleware Mounting (Dev vs Prod)
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';

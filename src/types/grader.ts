@@ -161,3 +161,20 @@ export interface ClassDiagnosticsSummary {
   ambiguousQuestions: AmbiguousQuestionFlag[];
   remedialSuggestions: string[];
 }
+
+export interface GasConfig {
+  webAppUrl: string;
+  spreadsheetName?: string;
+  spreadsheetId?: string;
+  isConnected: boolean;
+  lastSyncTime?: string;
+  autoSync: boolean;
+}
+
+export interface GasSyncResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  timestamp?: string;
+  sheetName?: string;
+}

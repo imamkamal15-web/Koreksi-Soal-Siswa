@@ -10,9 +10,16 @@ import {
   StudentSubmission,
   StudentGradedResult,
   ClassDiagnosticsSummary,
+  GasConfig,
 } from './types/grader';
 import { DEFAULT_SCHOOL_META } from './data/sampleAssessment';
 import { gradeStudentSubmission, generateClassDiagnostics } from './services/graderEngine';
+import {
+  loadGasConfig,
+  saveGasConfig,
+  pullStudentsFromGas,
+  pushResultsToGas,
+} from './services/gasService';
 import { AssessmentConfigView } from './components/AssessmentConfigView';
 import { DataIngestion } from './components/DataIngestion';
 import { GradingResultsView } from './components/GradingResultsView';
@@ -23,7 +30,8 @@ import { RemedialPengayaanView } from './components/RemedialPengayaanView';
 import { DesktopSidebar } from './components/DesktopSidebar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileProfileHeader } from './components/MobileProfileHeader';
-import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { GasBackendModal } from './components/GasBackendModal';
+import { AlertCircle, CheckCircle2, ArrowRight, Cloud } from 'lucide-react';
 
 export default function App() {
   // Navigation State
@@ -51,6 +59,12 @@ export default function App() {
     remedialSuggestions: [],
   });
 
+  // Google Apps Script (GAS) Backend State
+  const [gasConfig, setGasConfig] = useState<GasConfig>(loadGasConfig);
+  const [isGasModalOpen, setIsGasModalOpen] = useState(false);
+  const [isPullingGas, setIsPullingGas] = useState(false);
+  const [isPushingGas, setIsPushingGas] = useState(false);
+
   // UI Processing States
   const [isGrading, setIsGrading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -62,6 +76,59 @@ export default function App() {
     setTimeout(() => {
       setToast(null);
     }, 4500);
+  };
+
+  // Google Apps Script Actions
+  const handlePullFromGas = async () => {
+    if (!gasConfig.webAppUrl) {
+      setIsGasModalOpen(true);
+      return;
+    }
+
+    setIsPullingGas(true);
+    const res = await pullStudentsFromGas(gasConfig.webAppUrl);
+    setIsPullingGas(false);
+
+    if (res.success && res.students) {
+      setSubmissions(res.students);
+      const updatedConfig: GasConfig = {
+        ...gasConfig,
+        lastSyncTime: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setGasConfig(updatedConfig);
+      saveGasConfig(updatedConfig);
+      showToast('success', `Berhasil menarik ${res.students.length} siswa dari Google Spreadsheet!`);
+    } else {
+      showToast('error', res.message || 'Gagal menarik data siswa dari GAS.');
+    }
+  };
+
+  const handlePushToGas = async () => {
+    if (!gasConfig.webAppUrl) {
+      setIsGasModalOpen(true);
+      return;
+    }
+
+    if (gradedResults.length === 0) {
+      showToast('error', 'Belum ada hasil koreksi yang bisa dikirim ke Sheet.');
+      return;
+    }
+
+    setIsPushingGas(true);
+    const res = await pushResultsToGas(gasConfig.webAppUrl, meta, questions, gradedResults);
+    setIsPushingGas(false);
+
+    if (res.success) {
+      const updatedConfig: GasConfig = {
+        ...gasConfig,
+        lastSyncTime: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setGasConfig(updatedConfig);
+      saveGasConfig(updatedConfig);
+      showToast('success', `Berhasil menyimpan ${gradedResults.length} hasil siswa ke Google Spreadsheet!`);
+    } else {
+      showToast('error', res.message || 'Gagal menyimpan hasil ke Spreadsheet.');
+    }
   };
 
   // Main Action: Run Hybrid Grading Engine
@@ -157,6 +224,10 @@ export default function App() {
             questions={questions}
             submissions={submissions}
             onChange={setSubmissions}
+            gasConfig={gasConfig}
+            onOpenGasModal={() => setIsGasModalOpen(true)}
+            onPullFromGas={handlePullFromGas}
+            isPullingGas={isPullingGas}
           />
 
           {/* Next Step Banner */}
@@ -188,6 +259,10 @@ export default function App() {
             onOpenOverride={(student) => setSelectedStudentForOverride(student)}
             onOpenDiagnostics={() => setActiveTab('diagnostics')}
             onOpenPrint={() => setActiveTab('print')}
+            gasConfig={gasConfig}
+            onOpenGasModal={() => setIsGasModalOpen(true)}
+            onPushToGas={handlePushToGas}
+            isPushingGas={isPushingGas}
           />
         </div>
       )}
@@ -249,6 +324,8 @@ export default function App() {
           setDeviceMode={setDeviceMode}
           onRunGrading={handleRunGrading}
           isGrading={isGrading}
+          gasConfig={gasConfig}
+          onOpenGasModal={() => setIsGasModalOpen(true)}
         />
       )}
 
@@ -285,6 +362,20 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsGasModalOpen(true)}
+              className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition-colors ${
+                gasConfig.isConnected
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+              }`}
+              title="Google Sheets Backend (GAS)"
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              {gasConfig.isConnected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>}
+            </button>
+
             {questions.length > 0 && submissions.length > 0 && (
               <button
                 type="button"
@@ -383,6 +474,30 @@ export default function App() {
                   {meta.schoolName} · {meta.gradeClass} · Mata Pelajaran: <span className="font-semibold text-blue-700">{meta.subject}</span> · KKM: <strong className="font-mono text-slate-800">{meta.kkm}</strong>
                 </p>
               </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGasModalOpen(true)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all shadow-2xs ${
+                    gasConfig.isConnected
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                  title="Konfigurasi Google Apps Script (GAS) Backend"
+                >
+                  <Cloud className={`w-4 h-4 ${gasConfig.isConnected ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <div className="text-left">
+                    <div className="text-[11px] font-bold leading-none flex items-center gap-1.5">
+                      <span>Google Sheets (GAS)</span>
+                      <span className={`w-2 h-2 rounded-full ${gasConfig.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                    </div>
+                    <div className="text-[9px] text-slate-500 mt-0.5">
+                      {gasConfig.isConnected ? (gasConfig.lastSyncTime ? `Sinkron ${gasConfig.lastSyncTime}` : 'Terhubung') : 'Belum Terhubung'}
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Mobile Profile Card on Small Screens in responsive mode */}
@@ -418,6 +533,20 @@ export default function App() {
         isOpen={selectedStudentForOverride !== null}
         onClose={() => setSelectedStudentForOverride(null)}
         onSaveOverride={handleSaveOverride}
+      />
+
+      {/* Google Apps Script (GAS) Backend Configuration & Sync Modal */}
+      <GasBackendModal
+        isOpen={isGasModalOpen}
+        onClose={() => setIsGasModalOpen(false)}
+        gasConfig={gasConfig}
+        setGasConfig={setGasConfig}
+        meta={meta}
+        questions={questions}
+        submissions={submissions}
+        setSubmissions={setSubmissions}
+        gradedResults={gradedResults}
+        onShowToast={showToast}
       />
     </div>
   );

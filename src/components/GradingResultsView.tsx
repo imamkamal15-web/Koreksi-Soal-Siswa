@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { StudentGradedResult, QuestionItem, SchoolAssessmentMeta } from '../types/grader';
-import { Download, Edit3, CheckCircle2, AlertTriangle, Search, Filter } from 'lucide-react';
+import { StudentGradedResult, QuestionItem, SchoolAssessmentMeta, GasConfig } from '../types/grader';
+import { Download, Edit3, CheckCircle2, AlertTriangle, Search, Filter, Cloud } from 'lucide-react';
 
 interface GradingResultsViewProps {
   meta: SchoolAssessmentMeta;
@@ -9,6 +9,10 @@ interface GradingResultsViewProps {
   onOpenOverride: (student: StudentGradedResult) => void;
   onOpenDiagnostics: () => void;
   onOpenPrint: () => void;
+  gasConfig?: GasConfig;
+  onOpenGasModal?: () => void;
+  onPushToGas?: () => void;
+  isPushingGas?: boolean;
 }
 
 export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
@@ -18,6 +22,10 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
   onOpenOverride,
   onOpenDiagnostics,
   onOpenPrint,
+  gasConfig,
+  onOpenGasModal,
+  onPushToGas,
+  isPushingGas,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'tuntas' | 'remedial'>('all');
@@ -204,7 +212,27 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5 self-end sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={onPushToGas ? onPushToGas : onOpenGasModal}
+            disabled={isPushingGas}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-colors border shadow-2xs ${
+              gasConfig?.isConnected
+                ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-300'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
+            }`}
+            title="Kirim dan simpan rekapitulasi nilai langsung ke Google Spreadsheet via GAS"
+          >
+            <Cloud className={`w-3.5 h-3.5 ${gasConfig?.isConnected ? 'text-emerald-600' : 'text-slate-500'}`} />
+            <span>
+              {isPushingGas
+                ? 'Menyimpan...'
+                : gasConfig?.isConnected
+                ? 'Kirim ke Sheet (GAS)'
+                : 'Hubungkan GAS'}
+            </span>
+          </button>
           <button
             onClick={onOpenDiagnostics}
             className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"

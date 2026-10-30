@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StudentSubmission, QuestionItem, SchoolAssessmentMeta } from '../types/grader';
+import { StudentSubmission, QuestionItem, SchoolAssessmentMeta, GasConfig } from '../types/grader';
 import { parseRawOcrSubmission } from '../services/ocrCleaner';
 import { SAMPLE_STUDENTS, DEFAULT_SCHOOL_META } from '../data/sampleAssessment';
 import { AnswerSheetTemplateModal } from './AnswerSheetTemplateModal';
@@ -20,6 +20,7 @@ import {
   CheckSquare,
   Printer,
   Camera,
+  Cloud,
 } from 'lucide-react';
 import { CameraOcrScanner } from './CameraOcrScanner';
 
@@ -28,6 +29,10 @@ interface DataIngestionProps {
   questions: QuestionItem[];
   submissions: StudentSubmission[];
   onChange: (updated: StudentSubmission[]) => void;
+  gasConfig?: GasConfig;
+  onOpenGasModal?: () => void;
+  onPullFromGas?: () => void;
+  isPullingGas?: boolean;
 }
 
 export const DataIngestion: React.FC<DataIngestionProps> = ({
@@ -35,6 +40,10 @@ export const DataIngestion: React.FC<DataIngestionProps> = ({
   questions,
   submissions,
   onChange,
+  gasConfig,
+  onOpenGasModal,
+  onPullFromGas,
+  isPullingGas,
 }) => {
   const [activeImportMode, setActiveImportMode] = useState<'camera' | 'table' | 'paste' | 'csv' | 'ocr'>('camera');
   const [showGuideModal, setShowGuideModal] = useState(false);
@@ -372,6 +381,28 @@ NISN: 0081234511
 
         {/* Action Buttons for Template & Copy */}
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* Google Apps Script (GAS) Sync Button */}
+          <button
+            type="button"
+            onClick={onPullFromGas ? onPullFromGas : onOpenGasModal}
+            disabled={isPullingGas}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-colors border shadow-2xs ${
+              gasConfig?.isConnected
+                ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-300'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
+            }`}
+            title="Tarik data respon siswa langsung dari Google Spreadsheet via GAS"
+          >
+            <Cloud className={`w-3.5 h-3.5 ${gasConfig?.isConnected ? 'text-emerald-600' : 'text-slate-500'}`} />
+            <span>
+              {isPullingGas
+                ? 'Menarik...'
+                : gasConfig?.isConnected
+                ? 'Tarik dari Sheet (GAS)'
+                : 'Hubungkan GAS'}
+            </span>
+          </button>
+
           {/* Copy Table Format Button */}
           <button
             type="button"

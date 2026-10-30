@@ -10,8 +10,9 @@ import {
   Smartphone,
   Monitor,
   Zap,
+  Cloud,
 } from 'lucide-react';
-import { SchoolAssessmentMeta } from '../types/grader';
+import { SchoolAssessmentMeta, GasConfig } from '../types/grader';
 
 interface DesktopSidebarProps {
   activeTab: 'config' | 'import' | 'results' | 'diagnostics' | 'remedial' | 'print';
@@ -24,6 +25,8 @@ interface DesktopSidebarProps {
   setDeviceMode: (mode: 'responsive' | 'desktop' | 'mobile') => void;
   onRunGrading?: () => void;
   isGrading?: boolean;
+  gasConfig?: GasConfig;
+  onOpenGasModal?: () => void;
 }
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
@@ -37,6 +40,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   setDeviceMode,
   onRunGrading,
   isGrading,
+  gasConfig,
+  onOpenGasModal,
 }) => {
   const navItems = [
     {
@@ -150,7 +155,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
 
         {/* Action Button: Jalankan Koreksi AI (If questions and submissions are present) */}
         {totalQuestions > 0 && totalStudents > 0 && onRunGrading && (
-          <div className="pt-4 hidden lg:block">
+          <div className="pt-3 hidden lg:block">
             <button
               onClick={onRunGrading}
               disabled={isGrading}
@@ -167,6 +172,31 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                   <span>Jalankan Koreksi AI</span>
                 </>
               )}
+            </button>
+          </div>
+        )}
+
+        {/* Google Apps Script (GAS) Backend Tile */}
+        {onOpenGasModal && (
+          <div className="pt-3">
+            <button
+              type="button"
+              onClick={onOpenGasModal}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 transition-colors text-left"
+              title="Integrasi Google Apps Script (GAS) Backend"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Cloud className={`w-4 h-4 shrink-0 ${gasConfig?.isConnected ? 'text-emerald-400' : 'text-slate-400'}`} />
+                <div className="hidden lg:block truncate">
+                  <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <span>GAS Backend</span>
+                    <span className={`w-2 h-2 rounded-full ${gasConfig?.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  </div>
+                  <div className="text-[10px] text-slate-400 truncate">
+                    {gasConfig?.isConnected ? (gasConfig.spreadsheetName || 'Terhubung') : 'Hubungkan Cloud'}
+                  </div>
+                </div>
+              </div>
             </button>
           </div>
         )}
