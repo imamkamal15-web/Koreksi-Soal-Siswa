@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SchoolAssessmentMeta, StudentGradedResult } from '../types/grader';
-import { Award, BookOpen, Users, Sparkles, Sliders } from 'lucide-react';
+import { BookOpen, Users, ChevronDown, ChevronUp, Award, CheckCircle2 } from 'lucide-react';
 
 interface MobileProfileHeaderProps {
   meta: SchoolAssessmentMeta;
@@ -15,70 +15,88 @@ export const MobileProfileHeader: React.FC<MobileProfileHeaderProps> = ({
   totalQuestions,
   totalStudents,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const passCount = results.filter((r) => r.status === 'Tuntas').length;
   const passRate = totalStudents > 0 ? Math.round((passCount / totalStudents) * 100) : 0;
   const scores = results.map((r) => r.percentageScore);
   const avgScore = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0;
 
   return (
-    <div className="no-print block md:hidden mb-4">
-      {/* Growly-style Profile Card */}
-      <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-800 rounded-3xl p-5 text-white shadow-md relative overflow-hidden">
-        {/* Background glow circle */}
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col items-center text-center relative z-10">
-          {/* Avatar with Circular Ring */}
-          <div className="relative mb-3">
-            <div className="w-20 h-20 rounded-full p-1 bg-white/20 ring-4 ring-white/30 flex items-center justify-center">
+    <div className="no-print block md:hidden mb-3">
+      {/* Sleek Compact Bar with Optional Expand */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-2xl p-2.5 sm:p-3 text-white shadow-xs border border-blue-700/40">
+        <div className="flex items-center justify-between gap-2.5">
+          {/* Left: Avatar & Info */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-white/10 ring-1 ring-white/20 p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
               {meta.schoolLogoUrl ? (
                 <img
                   src={meta.schoolLogoUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-contain rounded-full bg-white p-1"
+                  alt="Logo"
+                  className="w-full h-full object-contain"
                 />
               ) : (
-                <div className="w-full h-full rounded-full bg-blue-900 flex items-center justify-center text-xl font-bold text-white">
+                <span className="text-xs font-bold text-white">
                   {meta.teacherName ? meta.teacherName.charAt(0) : 'I'}
-                </div>
+                </span>
               )}
             </div>
-            <span className="absolute bottom-0 right-1 w-5 h-5 rounded-full bg-emerald-400 ring-2 ring-white flex items-center justify-center text-[10px] text-slate-900 font-bold">
-              ✓
+
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-white truncate leading-tight">
+                {meta.teacherName || 'Imam Fadlun Kamal, S.Pd., M.Pd.'}
+              </div>
+              <div className="text-[10px] text-blue-200 truncate mt-0.5">
+                {meta.gradeClass || 'Kelas 5B'} · {meta.subject || 'IPAS'} · KKM: <span className="font-mono font-bold text-white">{meta.kkm}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Quick Stats & Toggle */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-lg font-mono font-bold text-blue-100">
+              {totalStudents} Siswa
             </span>
-          </div>
-
-          <h2 className="text-base font-bold text-white tracking-tight leading-snug">
-            {meta.teacherName || 'Imam Fadlun Kamal, S.Pd., M.Pd.'}
-          </h2>
-          <p className="text-xs text-blue-100 font-medium mt-0.5">
-            Guru {meta.gradeClass || 'Kelas 5B'} · {meta.schoolName || 'SD Negeri Gentan'}
-          </p>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 text-[11px] font-semibold text-blue-100 mt-2 backdrop-blur-xs">
-            <BookOpen className="w-3 h-3 text-blue-200" />
-            <span>Mata Pelajaran: {meta.subject || 'IPAS'}</span>
-          </div>
-
-          {/* 3 Metric Pills (inspired by Technical / Soft / Experience row) */}
-          <div className="w-full grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/15">
-            <div className="bg-white/10 rounded-2xl py-2 px-1">
-              <span className="text-[10px] text-blue-200 block uppercase font-medium">KKM Acuan</span>
-              <span className="text-base font-extrabold font-mono text-white">{meta.kkm}</span>
-            </div>
-
-            <div className="bg-white/10 rounded-2xl py-2 px-1">
-              <span className="text-[10px] text-blue-200 block uppercase font-medium">Jml Siswa</span>
-              <span className="text-base font-extrabold font-mono text-white">{totalStudents}</span>
-            </div>
-
-            <div className="bg-white/10 rounded-2xl py-2 px-1">
-              <span className="text-[10px] text-blue-200 block uppercase font-medium">Ketuntasan</span>
-              <span className="text-base font-extrabold font-mono text-emerald-300">
-                {results.length > 0 ? `${passRate}%` : `${totalQuestions} Soal`}
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-blue-200 transition-colors"
+              title={isExpanded ? 'Tutup Detail' : 'Buka Detail Profil'}
+            >
+              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
           </div>
         </div>
+
+        {/* Expandable Section with Detailed Metrics */}
+        {isExpanded && (
+          <div className="mt-3 pt-3 border-t border-white/15 space-y-2.5 animate-in fade-in">
+            <div className="text-[11px] text-blue-200 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>{meta.schoolName || 'SD Negeri Gentan'}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white/10 rounded-xl py-2 px-1">
+                <span className="text-[9px] text-blue-200 block uppercase">KKM Acuan</span>
+                <span className="text-sm font-bold font-mono text-white">{meta.kkm}</span>
+              </div>
+
+              <div className="bg-white/10 rounded-xl py-2 px-1">
+                <span className="text-[9px] text-blue-200 block uppercase">Soal Ujian</span>
+                <span className="text-sm font-bold font-mono text-white">{totalQuestions}</span>
+              </div>
+
+              <div className="bg-white/10 rounded-xl py-2 px-1">
+                <span className="text-[9px] text-blue-200 block uppercase">Ketuntasan</span>
+                <span className="text-sm font-bold font-mono text-emerald-300">
+                  {results.length > 0 ? `${passRate}%` : '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -253,45 +253,46 @@ export default function App() {
       )}
 
       {/* 2. MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 pb-28 md:pb-8">
         {/* Sleek Mobile-Only Header Bar (Only visible on small phones when sidebar is hidden) */}
-        <header className="no-print md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5">
+        <header className="no-print md:hidden bg-slate-900 text-white px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-slate-800 sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
             {meta.schoolLogoUrl ? (
               <img
                 src={meta.schoolLogoUrl}
                 alt="Logo"
-                className="w-7 h-7 object-contain rounded bg-white/10 p-0.5"
+                className="w-8 h-8 object-contain rounded-lg bg-white/10 p-0.5 shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 rounded bg-blue-600 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs text-white shrink-0">
                 SG
               </div>
             )}
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold leading-tight truncate max-w-[170px]">
+            <div className="overflow-hidden min-w-0">
+              <div className="text-xs font-bold leading-tight truncate">
                 {meta.schoolName || 'SD Negeri Gentan'}
               </div>
-              <div className="text-[10px] text-blue-400 font-medium">
+              <div className="text-[10px] text-blue-400 font-medium truncate">
                 {activeTab === 'config' && 'Perangkat Soal'}
                 {activeTab === 'import' && 'Impor & Scan Jawaban'}
                 {activeTab === 'results' && 'Hasil Koreksi'}
                 {activeTab === 'diagnostics' && 'Diagnostik Kelas'}
                 {activeTab === 'remedial' && 'Remedial & Pengayaan'}
                 {activeTab === 'print' && 'Laporan Cetak'}
+                {' · '}{meta.gradeClass}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {questions.length > 0 && submissions.length > 0 && (
               <button
                 type="button"
                 onClick={handleRunGrading}
                 disabled={isGrading}
-                className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[11px] font-bold rounded-lg text-white shadow-xs"
+                className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[11px] font-bold rounded-lg text-white shadow-xs transition-transform active:scale-95"
               >
-                {isGrading ? 'Mengoreksi...' : 'Koreksi AI'}
+                {isGrading ? 'Mengoreksi...' : '⚡ Koreksi AI'}
               </button>
             )}
           </div>
@@ -299,7 +300,7 @@ export default function App() {
 
         {/* Floating Notification Toast */}
         {toast && (
-          <div className="no-print fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold animate-in fade-in slide-in-from-bottom-2 bg-white border-slate-200">
+          <div className="no-print fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold animate-in fade-in slide-in-from-bottom-2 bg-white border-slate-200">
             {toast.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
@@ -313,7 +314,19 @@ export default function App() {
 
         {/* IF DEVICE MODE IS SIMULATED MOBILE (Exact Phone Screen Frame as in Reference Image!) */}
         {deviceMode === 'mobile' ? (
-          <div className="py-8 px-4 flex justify-center items-start bg-slate-900/10 min-h-[calc(100vh-64px)]">
+          <div className="py-6 px-3 flex flex-col justify-center items-center bg-slate-900/10 min-h-[calc(100vh-64px)]">
+            {/* Top Toolbar to Switch Back */}
+            <div className="w-full max-w-[410px] mb-2.5 flex items-center justify-between text-xs bg-slate-900 text-white px-3.5 py-2 rounded-2xl shadow-lg border border-slate-800">
+              <span className="font-semibold text-blue-300 text-[11px]">📱 Tampilan Ponsel</span>
+              <button
+                type="button"
+                onClick={() => setDeviceMode('responsive')}
+                className="font-bold text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-0.5 rounded-lg transition-colors shadow-2xs"
+              >
+                Desktop ↗
+              </button>
+            </div>
+
             <div className="w-full max-w-[410px] bg-slate-950 p-3 rounded-[48px] shadow-2xl border-4 border-slate-800 relative">
               {/* Phone Speaker & Dynamic Island */}
               <div className="w-28 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center">
@@ -335,7 +348,7 @@ export default function App() {
                 </div>
 
                 {/* Mobile Scrollable Viewport Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-24">
                   <MobileProfileHeader
                     meta={meta}
                     results={gradedResults}
@@ -359,9 +372,9 @@ export default function App() {
           </div>
         ) : (
           /* REGULAR RESPONSIVE OR DESKTOP VIEW */
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
             {/* Desktop Greeting Header (inspired by Growly LMS 'Good Morning' in reference) */}
-            <div className="mb-6 hidden md:flex items-center justify-between">
+            <div className="mb-5 hidden md:flex items-center justify-between">
               <div>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Selamat Datang, {meta.teacherName || 'Bapak/Ibu Guru'}

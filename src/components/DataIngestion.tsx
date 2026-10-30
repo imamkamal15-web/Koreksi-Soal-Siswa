@@ -345,165 +345,176 @@ NISN: 0081234511
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header Card */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900">
-              Impor Jawaban Siswa (Kolom Sendiri-Sendiri)
+            <h2 className="text-xs sm:text-base font-bold text-slate-900">
+              Impor Respon Jawaban Siswa
             </h2>
             <button
               onClick={() => setShowGuideModal(true)}
-              className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 font-semibold"
+              className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-blue-700 hover:text-blue-900 font-semibold"
             >
-              <HelpCircle className="w-4 h-4" />
-              <span>Petunjuk Kolom</span>
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Petunjuk Kolom</span>
             </button>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-            <span>Siswa Terdaftar: <strong className="text-slate-900 font-mono">{submissions.length} siswa</strong></span>
+          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-500 mt-1 flex-wrap">
+            <span>Siswa: <strong className="text-slate-900 font-mono">{submissions.length}</strong></span>
             <span>·</span>
-            <span>Total Kolom Soal: <strong className="text-slate-900 font-mono">{questions.length} kolom butir</strong></span>
+            <span>Kolom Soal: <strong className="text-slate-900 font-mono">{questions.length} butir</strong></span>
             <span>·</span>
-            <span className="text-emerald-700 font-medium">Setiap Nomor Soal Memiliki Kolom Tersendiri</span>
+            <span className="text-emerald-700 font-medium">1 Kolom per Soal</span>
           </div>
         </div>
 
         {/* Action Buttons for Template & Copy */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Copy Table Format Button */}
           <button
             type="button"
             onClick={handleCopyExcelHeaders}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 shadow-xs"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 shadow-2xs"
             title="Salin Kolom ke Clipboard lalu Ctrl+V di Excel / Spreadsheet"
           >
             {copiedClipboard ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-700 font-bold">Kolom Berhasil Disalin!</span>
+                <span className="text-emerald-700 font-bold">Tersalin!</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5 text-slate-600" />
-                <span>Salin Format Kolom Excel</span>
+                <span className="hidden sm:inline">Salin Format</span>
+                <span className="sm:hidden">Salin</span>
               </>
             )}
           </button>
 
-          {/* Download Excel Template (Semicolon ; separated so Excel Indonesia automatically puts each item in column A, B, C, D...) */}
+          {/* Download Excel Template */}
           <button
             type="button"
             onClick={() => handleDownloadExcelTemplate(';')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-300 shadow-xs"
-            title="Unduh File CSV yang Otomatis Terpisah Kolom A, B, C, D di Excel Indonesia"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-300 shadow-2xs"
+            title="Unduh File CSV yang Otomatis Terpisah Kolom A, B, C, D di Excel"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Unduh File Excel (Kolom Terpisah)</span>
+            <span className="hidden sm:inline">Unduh Excel</span>
+            <span className="sm:hidden">Unduh</span>
           </button>
 
           {submissions.length === 0 ? (
             <button
               onClick={() => onChange(SAMPLE_STUDENTS)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-2xs"
+              title="Muat 5 respon sampel"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Muat 5 Respon Sampel</span>
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">Respon Sampel</span>
+              <span className="sm:hidden">Sampel</span>
             </button>
           ) : (
             <button
               onClick={() => onChange([])}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] sm:text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              title="Kosongkan Semua Siswa"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Kosongkan</span>
+              <span className="hidden sm:inline">Kosongkan</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Info Banner: Penjelasan Kolom Terpisah */}
-      <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 text-blue-700 shrink-0" />
+      <div className="p-2.5 sm:p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-[10px] sm:text-xs text-blue-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
           <span>
-            <strong>Format Kolom Mandiri:</strong> File Excel &amp; tabel di bawah kini memiliki kolom tersendiri mulai dari <strong>No</strong>, <strong>Nama Siswa</strong>, <strong>NISN</strong>, hingga kolom masing-masing nomor soal (<strong>Soal 1</strong>, <strong>Soal 2</strong>, dst).
+            <strong>Format Mandiri:</strong> Kolom terpisah untuk <strong>No</strong>, <strong>Nama Siswa</strong>, <strong>NISN</strong>, dan tiap butir soal.
           </span>
         </div>
-        <div className="text-[11px] text-blue-800 font-mono shrink-0">
-          Otomatis terpecah kolom A, B, C, D... di Excel
+        <div className="text-[9px] sm:text-[10px] text-blue-800 font-mono shrink-0">
+          Otomatis Kolom A, B, C, D... di Excel
         </div>
       </div>
 
       {/* Mode Navigation Tabs */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
-        <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg mb-6 w-full overflow-x-auto">
+      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-5 shadow-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg mb-4 w-full overflow-x-auto scrollbar-none">
           {/* TAB 0: KAMERA SCAN OCR LANGSUNG (TERHUBUNG KE KAMERA HP / LAPTOP) */}
           <button
             type="button"
             onClick={() => setActiveImportMode('camera')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activeImportMode === 'camera'
                 ? 'bg-blue-600 text-white shadow-xs font-bold'
-                : 'text-blue-800 bg-blue-100/60 hover:bg-blue-100 font-bold'
+                : 'text-blue-800 bg-blue-100/60 hover:bg-blue-100 font-semibold'
             }`}
+            title="Scan Lembar Jawaban Langsung dari Kamera Ponsel/Laptop"
           >
-            <Camera className="w-3.5 h-3.5" />
-            <span>📸 Kamera Scan OCR Langsung</span>
-            <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.2 rounded-full font-sans">Baru</span>
+            <Camera className="w-3.5 h-3.5 shrink-0" />
+            <span>Kamera</span>
+            <span className="text-[9px] bg-blue-500 text-white px-1 py-0.2 rounded-full font-sans">Baru</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveImportMode('table')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activeImportMode === 'table'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
+            title="Tabel Matriks Grid Kolom Mandiri"
           >
-            <Table className="w-3.5 h-3.5 text-blue-600" />
-            <span>1. Tabel Matriks Grid ({submissions.length} Siswa)</span>
+            <Table className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span>Tabel</span>
+            <span className="text-[9px] font-mono text-slate-400">({submissions.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveImportMode('paste')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activeImportMode === 'paste'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
+            title="Salin dan Tempel Baris dari Excel (Ctrl+V)"
           >
-            <ClipboardPaste className="w-3.5 h-3.5 text-indigo-600" />
-            <span>2. Salin Baris Excel (Ctrl+V)</span>
+            <ClipboardPaste className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span>Excel</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveImportMode('csv')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activeImportMode === 'csv'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
+            title="Unggah File Berkas .CSV"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            <span>3. Unggah Berkas .CSV</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>CSV</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveImportMode('ocr')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activeImportMode === 'ocr'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
             }`}
+            title="Tempel Teks Hasil OCR Scanner"
           >
-            <ScanText className="w-3.5 h-3.5 text-purple-600" />
-            <span>4. Tempel Teks OCR</span>
+            <ScanText className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+            <span>OCR Teks</span>
           </button>
         </div>
 

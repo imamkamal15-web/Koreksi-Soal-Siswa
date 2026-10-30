@@ -87,94 +87,94 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* KPI Stats Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
             Rata-Rata Kelas
           </span>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-slate-900 tabular-nums">
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-2xl font-bold font-mono text-slate-900 tabular-nums">
               {avgScore}
             </span>
-            <span className="text-xs text-slate-400">/ 100</span>
+            <span className="text-[10px] sm:text-xs text-slate-400">/ 100</span>
           </div>
-          <span className="text-xs text-slate-500 mt-1 block">
-            KKM Target: <strong className="font-mono text-blue-700">{meta.kkm}</strong>
+          <span className="text-[10px] sm:text-xs text-slate-500 mt-0.5 block truncate">
+            KKM: <strong className="font-mono text-blue-700">{meta.kkm}</strong>
           </span>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-            Ketuntasan Belajar
+        <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            Ketuntasan
           </span>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className={`text-2xl font-bold font-mono tabular-nums ${passRate >= 75 ? 'text-emerald-700' : 'text-amber-700'}`}>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className={`text-lg sm:text-2xl font-bold font-mono tabular-nums ${passRate >= 75 ? 'text-emerald-700' : 'text-amber-700'}`}>
               {passRate}%
             </span>
-            <span className="text-xs text-slate-500 font-mono">
-              ({passCount} dari {totalStudents} siswa)
+            <span className="text-[10px] sm:text-xs text-slate-500 font-mono">
+              ({passCount}/{totalStudents})
             </span>
           </div>
-          <span className="text-xs text-slate-500 mt-1 block">
-            {passRate >= 75 ? 'Memenuhi Standar Klasikal' : 'Perlu Pendampingan Remidial'}
+          <span className="text-[10px] sm:text-xs text-slate-500 mt-0.5 block truncate">
+            {passRate >= 75 ? 'Memenuhi Standar' : 'Perlu Remidial'}
           </span>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-            Nilai Tertinggi
+        <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            Tertinggi
           </span>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-emerald-700 tabular-nums">
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-2xl font-bold font-mono text-emerald-700 tabular-nums">
               {maxScore}
             </span>
-            <span className="text-xs text-slate-400">/ 100</span>
+            <span className="text-[10px] sm:text-xs text-slate-400">/ 100</span>
           </div>
-          <span className="text-xs text-slate-500 mt-1 block">
-            Capaian Maksimum Siswa
+          <span className="text-[10px] sm:text-xs text-slate-500 mt-0.5 block truncate">
+            Capaian Maksimum
           </span>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-            Nilai Terendah
+        <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            Terendah
           </span>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-rose-700 tabular-nums">
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-2xl font-bold font-mono text-rose-700 tabular-nums">
               {minScore}
             </span>
-            <span className="text-xs text-slate-400">/ 100</span>
+            <span className="text-[10px] sm:text-xs text-slate-400">/ 100</span>
           </div>
-          <span className="text-xs text-slate-500 mt-1 block">
-            Batas Pembinaan Remedial
+          <span className="text-[10px] sm:text-xs text-slate-500 mt-0.5 block truncate">
+            Pembinaan Remedial
           </span>
         </div>
       </div>
 
       {/* Control bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search & Filter */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama / NISN siswa..."
-              className="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg w-52 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white"
+              placeholder="Cari siswa..."
+              className="pl-8 pr-2.5 py-1 text-[11px] sm:text-xs bg-slate-50 border border-slate-200 rounded-lg w-full sm:w-48 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white"
             />
           </div>
 
           {/* Segmented Filter Control */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100 rounded-lg">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md transition-colors ${
                 statusFilter === 'all'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                  ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -182,9 +182,9 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('tuntas')}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md transition-colors ${
                 statusFilter === 'tuntas'
-                  ? 'bg-white text-emerald-800 shadow-xs font-semibold'
+                  ? 'bg-white text-emerald-800 shadow-2xs font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -192,9 +192,9 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('remedial')}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md transition-colors ${
                 statusFilter === 'remedial'
-                  ? 'bg-white text-rose-800 shadow-xs font-semibold'
+                  ? 'bg-white text-rose-800 shadow-2xs font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -204,20 +204,22 @@ export const GradingResultsView: React.FC<GradingResultsViewProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
           <button
             onClick={onOpenDiagnostics}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
           >
             <Filter className="w-3.5 h-3.5 text-slate-600" />
-            <span>Lihat Diagnostik</span>
+            <span className="hidden sm:inline">Diagnostik</span>
+            <span className="sm:hidden">Diagnostik</span>
           </button>
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
           >
             <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>Ekspor CSV</span>
+            <span className="hidden sm:inline">Ekspor CSV</span>
+            <span className="sm:hidden">Ekspor</span>
           </button>
         </div>
       </div>

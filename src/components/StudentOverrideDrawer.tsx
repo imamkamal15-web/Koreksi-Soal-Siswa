@@ -100,27 +100,23 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden">
         {/* Drawer Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-3.5 sm:px-6 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
-                Laci Koreksi &amp; Override Nilai Siswa
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-xs sm:text-base font-bold text-slate-900">
+                Koreksi &amp; Override Nilai
               </h2>
-              <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs text-slate-600 font-semibold">{student.studentName}</span>
+              <span className="text-slate-300">·</span>
+              <span className="text-[11px] sm:text-xs text-blue-700 font-bold">{student.studentName}</span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-500 mt-0.5 flex-wrap">
               <span>NISN: <strong className="font-mono text-slate-700">{student.nisn}</strong></span>
               <span>·</span>
               <span>
-                Nilai Awal: <strong className="font-mono text-slate-700">{student.percentageScore}</strong>
-              </span>
-              <span>·</span>
-              <span>
-                Nilai Baru: <strong className={`font-mono font-bold ${liveTotals.percentageScore >= kkm ? 'text-emerald-700' : 'text-rose-700'}`}>{liveTotals.percentageScore}</strong> / 100
+                Nilai Baru: <strong className={`font-mono font-bold ${liveTotals.percentageScore >= kkm ? 'text-emerald-700' : 'text-rose-700'}`}>{liveTotals.percentageScore}</strong>
               </span>
               <span>·</span>
               <span>Status: <strong className={liveTotals.status === 'Tuntas' ? 'text-emerald-700' : 'text-rose-700'}>{liveTotals.status}</strong></span>
@@ -129,18 +125,18 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
+            className="p-1 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Drawer Content */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
-          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
-            <Sparkles className="w-4 h-4 text-blue-700 shrink-0" />
+        <div className="p-3 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4 flex-1">
+          <div className="flex items-center gap-2 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg text-[10px] sm:text-xs text-blue-900">
+            <Sparkles className="w-3.5 h-3.5 text-blue-700 shrink-0" />
             <span>
-              Guru dapat menyesuaikan skor pada setiap butir soal di bawah. Nilai total dan status KKM akan dihitung ulang secara seketika.
+              Sesuaikan skor pada butir soal di bawah. Nilai dan status KKM dihitung seketika.
             </span>
           </div>
 
