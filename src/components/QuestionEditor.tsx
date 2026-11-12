@@ -234,6 +234,47 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
           ...q,
           correctOption: optionMatch ? optionMatch[0] : q.correctOption,
         };
+      } else if (q.type === 'pgk') {
+        // Support e.g. "A,C", "AC", "A-C", "B,D"
+        const letters = Array.from(
+          new Set(
+            keyVal
+              .replace(/[^A-E]/g, '')
+              .split('')
+              .filter(Boolean)
+          )
+        );
+        const defaultOpts = [
+          { id: 'A', label: 'Pilihan A', isCorrect: false },
+          { id: 'B', label: 'Pilihan B', isCorrect: false },
+          { id: 'C', label: 'Pilihan C', isCorrect: false },
+          { id: 'D', label: 'Pilihan D', isCorrect: false },
+        ];
+        const existing = q.pgkOptions && q.pgkOptions.length > 0 ? [...q.pgkOptions] : defaultOpts;
+        
+        // Ensure all pasted letters exist
+        letters.forEach(letter => {
+          if (!existing.some(o => o.id === letter)) {
+            existing.push({ id: letter, label: `Pilihan ${letter}`, isCorrect: true });
+          }
+        });
+
+        return {
+          ...q,
+          pgkOptions: existing.map(o => ({
+            ...o,
+            isCorrect: letters.includes(o.id),
+          })),
+        };
+      } else if (q.type === 'bs') {
+        const letters = keyVal.replace(/[^BS]/g, '').split('');
+        const stmts = (q.bsStatements || []).map((s, sIdx) => {
+          if (letters[sIdx]) {
+            return { ...s, correctAnswer: letters[sIdx] === 'B' };
+          }
+          return s;
+        });
+        return { ...q, bsStatements: stmts };
       } else if (q.type === 'isian') {
         return {
           ...q,
@@ -253,12 +294,93 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
     setShowQuickKeyBar(false);
   };
 
+  // Direct toggle for PGK options (e.g. click A, B, C, D to toggle)
+  const handleTogglePgkOption = (qId: string, optId: string) => {
+    const updated = questions.map(q => {
+      if (q.id !== qId || q.type !== 'pgk') return q;
+      const defaultOpts = [
+        { id: 'A', label: 'Pilihan A', isCorrect: false },
+        { id: 'B', label: 'Pilihan B', isCorrect: false },
+        { id: 'C', label: 'Pilihan C', isCorrect: false },
+        { id: 'D', label: 'Pilihan D', isCorrect: false },
+      ];
+      const opts = q.pgkOptions && q.pgkOptions.length > 0 ? [...q.pgkOptions] : defaultOpts;
+      const exists = opts.some(o => o.id === optId);
+      const updatedOpts = exists
+        ? opts.map(o => (o.id === optId ? { ...o, isCorrect: !o.isCorrect } : o))
+        : [...opts, { id: optId, label: `Pilihan ${optId}`, isCorrect: true }];
+
+      return {
+        ...q,
+        pgkOptions: updatedOpts,
+      };
+    });
+    onChange(updated);
+  };
+
+  // Direct toggle for Benar/Salah statement
+  const handleToggleBsStatement = (qId: string, statementId: string) => {
+    const updated = questions.map(q => {
+      if (q.id !== qId || q.type !== 'bs') return q;
+      const stmts = (q.bsStatements || []).map(s =>
+        s.id === statementId ? { ...s, correctAnswer: !s.correctAnswer } : s
+      );
+      return { ...q, bsStatements: stmts };
+    });
+    onChange(updated);
+  };
+
   // Quick Inline Key update
   const handleUpdateQuickKeyInline = (qId: string, newKey: string) => {
     const updated = questions.map(q => {
       if (q.id !== qId) return q;
       if (q.type === 'pg') {
         return { ...q, correctOption: newKey.toUpperCase().trim() };
+      } else if (q.type === 'pgk') {
+        // Parse: "A, C", "AC", "A-C", "A B C", "B,D"
+        const letters = Array.from(
+          new Set(
+            newKey
+              .toUpperCase()
+              .replace(/[^A-Z]/g, '')
+              .split('')
+              .filter(Boolean)
+          )
+        );
+        const defaultOpts = [
+          { id: 'A', label: 'Pilihan A', isCorrect: false },
+          { id: 'B', label: 'Pilihan B', isCorrect: false },
+          { id: 'C', label: 'Pilihan C', isCorrect: false },
+          { id: 'D', label: 'Pilihan D', isCorrect: false },
+        ];
+        const existing = q.pgkOptions && q.pgkOptions.length > 0 ? [...q.pgkOptions] : defaultOpts;
+        
+        letters.forEach(letter => {
+          if (!existing.some(o => o.id === letter)) {
+            existing.push({
+              id: letter,
+              label: `Pilihan ${letter}`,
+              isCorrect: true,
+            });
+          }
+        });
+
+        return {
+          ...q,
+          pgkOptions: existing.map(o => ({
+            ...o,
+            isCorrect: letters.includes(o.id),
+          })),
+        };
+      } else if (q.type === 'bs') {
+        const letters = newKey.toUpperCase().replace(/[^BS]/g, '').split('');
+        const stmts = (q.bsStatements || []).map((s, idx) => {
+          if (letters[idx]) {
+            return { ...s, correctAnswer: letters[idx] === 'B' };
+          }
+          return s;
+        });
+        return { ...q, bsStatements: stmts };
       } else if (q.type === 'isian') {
         return { ...q, acceptableAnswers: [newKey.trim()] };
       } else if (q.type === 'hitungan') {
@@ -277,11 +399,21 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
 
     if (q.type === 'pg') {
       setPgCorrect(q.correctOption || 'A');
-      setPgOptions(q.options || ['A. ', 'B. ', 'C. ', 'D. ']);
+      setPgOptions(q.options || ['A. Pilihan A', 'B. Pilihan B', 'C. Pilihan C', 'D. Pilihan D']);
     } else if (q.type === 'pgk') {
-      setPgkOptions(q.pgkOptions || []);
+      const defaultPgk = [
+        { id: 'A', label: 'Pilihan A', isCorrect: true },
+        { id: 'B', label: 'Pilihan B', isCorrect: false },
+        { id: 'C', label: 'Pilihan C', isCorrect: true },
+        { id: 'D', label: 'Pilihan D', isCorrect: false },
+      ];
+      setPgkOptions(q.pgkOptions && q.pgkOptions.length > 0 ? q.pgkOptions : defaultPgk);
     } else if (q.type === 'bs') {
-      setBsStatements(q.bsStatements || []);
+      const defaultBs = [
+        { id: 's1', statement: 'Pernyataan 1', correctAnswer: true },
+        { id: 's2', statement: 'Pernyataan 2', correctAnswer: false },
+      ];
+      setBsStatements(q.bsStatements && q.bsStatements.length > 0 ? q.bsStatements : defaultBs);
     } else if (q.type === 'isian') {
       setIsianAnswers((q.acceptableAnswers || []).join(', '));
       setIsianMathEq(Boolean(q.isMathEquivalent));
@@ -730,6 +862,41 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
                         <option value="D">D</option>
                         <option value="E">E</option>
                       </select>
+                    ) : q.type === 'pgk' ? (
+                      <div className="w-full space-y-1">
+                        {/* 1-Click Toggles for A, B, C, D, (E) */}
+                        <div className="flex items-center justify-center gap-0.5">
+                          {(q.pgkOptions && q.pgkOptions.length > 0 ? q.pgkOptions : [
+                            { id: 'A', label: 'A', isCorrect: false },
+                            { id: 'B', label: 'B', isCorrect: false },
+                            { id: 'C', label: 'C', isCorrect: false },
+                            { id: 'D', label: 'D', isCorrect: false },
+                          ]).slice(0, 5).map(opt => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => handleTogglePgkOption(q.id, opt.id)}
+                              className={`w-5 h-5 text-[10px] font-bold font-mono rounded flex items-center justify-center transition-all border ${
+                                opt.isCorrect
+                                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs scale-105'
+                                  : 'bg-white text-slate-500 hover:bg-slate-100 border-slate-200'
+                              }`}
+                              title={`Klik untuk ${opt.isCorrect ? 'batalkan' : 'jadikan'} kunci ${opt.id}`}
+                            >
+                              {opt.id}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Inline Key text field */}
+                        <input
+                          type="text"
+                          value={currentKey}
+                          onChange={(e) => handleUpdateQuickKeyInline(q.id, e.target.value)}
+                          placeholder="misal: A,C"
+                          className="w-full text-[10px] font-mono font-bold text-center py-0.5 px-1 bg-emerald-50/70 border border-emerald-300 rounded text-emerald-800"
+                          title="Ketik huruf kunci PGK (misal: A, C atau B, D)"
+                        />
+                      </div>
                     ) : (
                       <input
                         type="text"
@@ -827,24 +994,101 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
                       {q.prompt}
                     </p>
 
-                    <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 font-mono">
+                    <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-mono">
                       {q.type === 'pg' && (
-                        <span>Kunci: <strong className="text-emerald-700">{q.correctOption}</strong></span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-sans text-slate-500 font-medium">Kunci Jawaban:</span>
+                          <strong className="text-emerald-700 font-mono text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            {q.correctOption}
+                          </strong>
+                        </div>
                       )}
+
                       {q.type === 'pgk' && (
-                        <span>Kunci: <strong className="text-emerald-700">{q.pgkOptions?.filter(o => o.isCorrect).map(o => o.id).join(', ')}</strong></span>
+                        <div className="space-y-1.5 font-sans">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-700 text-[11px]">Kunci PGK:</span>
+                            {(q.pgkOptions && q.pgkOptions.length > 0 ? q.pgkOptions : [
+                              { id: 'A', label: 'Pilihan A', isCorrect: false },
+                              { id: 'B', label: 'Pilihan B', isCorrect: false },
+                              { id: 'C', label: 'Pilihan C', isCorrect: false },
+                              { id: 'D', label: 'Pilihan D', isCorrect: false },
+                            ]).map((opt) => (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => handleTogglePgkOption(q.id, opt.id)}
+                                className={`px-2 py-0.5 rounded text-[11px] font-bold font-mono transition-all border ${
+                                  opt.isCorrect
+                                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                                    : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'
+                                }`}
+                                title={`Klik untuk ${opt.isCorrect ? 'batalkan' : 'jadikan'} kunci ${opt.id}`}
+                              >
+                                {opt.id} {opt.isCorrect ? '✓' : ''}
+                              </button>
+                            ))}
+                            <span className="text-[10px] text-slate-400 italic">
+                              (Klik huruf untuk ubah kunci)
+                            </span>
+                          </div>
+
+                          {q.pgkOptions && q.pgkOptions.some((o) => o.label && o.label !== `Pilihan ${o.id}`) && (
+                            <div className="text-[10px] text-slate-600 pl-1 space-y-0.5 pt-1 border-t border-slate-200/60">
+                              {q.pgkOptions.map((o) => (
+                                <div key={o.id} className={o.isCorrect ? 'font-semibold text-emerald-800' : 'text-slate-500'}>
+                                  <span className="font-mono">{o.id}.</span> {o.label} {o.isCorrect ? '★ (Kunci)' : ''}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
+
                       {q.type === 'bs' && (
-                        <span>Pernyataan: {q.bsStatements?.map((s, idx) => `#${idx + 1}:${s.correctAnswer ? 'B' : 'S'}`).join(' · ')}</span>
+                        <div className="space-y-1 font-sans">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-700 text-[11px]">Kunci Benar/Salah:</span>
+                            {(q.bsStatements || []).map((s, idx) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => handleToggleBsStatement(q.id, s.id)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all border ${
+                                  s.correctAnswer
+                                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                                    : 'bg-rose-600 text-white border-rose-700 shadow-2xs'
+                                }`}
+                                title={`Pernyataan #${idx + 1}: Klik untuk ubah ke ${s.correctAnswer ? 'SALAH' : 'BENAR'}`}
+                              >
+                                #{idx + 1}: {s.correctAnswer ? 'B' : 'S'}
+                              </button>
+                            ))}
+                            <span className="text-[10px] text-slate-400 italic">(Klik untuk ubah B/S)</span>
+                          </div>
+                        </div>
                       )}
+
                       {q.type === 'isian' && (
-                        <span>Kunci: <strong>{q.acceptableAnswers?.join(' / ')}</strong></span>
+                        <div>
+                          <span>Kunci Diterima: <strong className="text-emerald-700">{q.acceptableAnswers?.join(' / ')}</strong></span>
+                          {q.isMathEquivalent && <span className="ml-2 text-[10px] text-blue-600 font-sans">(Ekuivalen Matematika Aktif)</span>}
+                        </div>
                       )}
+
                       {q.type === 'hitungan' && (
-                        <span>Hasil: <strong className="text-emerald-700">{q.mathFinalAnswer}</strong> | Rumus: {q.mathFormula}</span>
+                        <div>
+                          <span>Hasil Akhir: <strong className="text-emerald-700">{q.mathFinalAnswer}</strong></span>
+                          <span className="text-slate-300 mx-2">|</span>
+                          <span>Rumus: <code className="text-blue-700">{q.mathFormula}</code></span>
+                        </div>
                       )}
+
                       {q.type === 'esai' && (
-                        <span>Acuan Konsep: {q.modelAnswer}</span>
+                        <div>
+                          <span className="font-sans font-semibold text-slate-600">Acuan Jawaban Guru:</span>
+                          <p className="font-sans text-slate-800 italic mt-0.5">{q.modelAnswer || 'Belum diisi'}</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -874,14 +1118,14 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
 
       {/* Edit Form Modal/Section jika guru klik Edit Soal */}
       {editingId && (
-        <div className="bg-white rounded-xl border border-blue-400 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-900">
-              Edit Teks &amp; Rubrik Soal #{questions.find(q => q.id === editingId)?.number}
+        <div className="bg-white rounded-xl border-2 border-blue-400 p-4 sm:p-6 shadow-md">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900">
+              Edit Soal #{questions.find((q) => q.id === editingId)?.number} ({activeType.toUpperCase()})
             </h3>
             <button
               onClick={handleCancelEdit}
-              className="text-xs text-slate-500 hover:text-slate-800"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800"
             >
               Batalkan
             </button>
@@ -894,29 +1138,30 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
                 rows={2}
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
-                className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Bobot Nilai (Poin)</label>
                 <input
                   type="number"
                   step={0.5}
+                  min={0.5}
                   value={weight}
                   onChange={(e) => setWeight(Number(e.target.value))}
-                  className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-blue-700"
                 />
               </div>
 
               {activeType === 'pg' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kunci Jawaban</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kunci Jawaban Tunggal</label>
                   <select
                     value={pgCorrect}
                     onChange={(e) => setPgCorrect(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-blue-700"
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-emerald-700 bg-white"
                   >
                     <option value="A">A</option>
                     <option value="B">B</option>
@@ -928,18 +1173,268 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            {/* Pilihan Ganda Kompleks (PGK) Multi-Key Editor */}
+            {activeType === 'pgk' && (
+              <div className="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-950">
+                      Kunci Jawaban Pilihan Ganda Kompleks (PGK)
+                    </label>
+                    <p className="text-[11px] text-emerald-800">
+                      Centang kotak pada opsi yang merupakan jawaban <strong>BENAR</strong> (bisa lebih dari satu).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextChar = String.fromCharCode(65 + pgkOptions.length);
+                      setPgkOptions([
+                        ...pgkOptions,
+                        { id: nextChar, label: `Pilihan ${nextChar}`, isCorrect: false },
+                      ]);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold text-emerald-800 bg-white hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-2xs"
+                  >
+                    + Tambah Opsi
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {pgkOptions.map((opt, idx) => (
+                    <div
+                      key={opt.id}
+                      className={`flex items-center gap-2.5 p-2 rounded-lg border transition-colors ${
+                        opt.isCorrect
+                          ? 'bg-emerald-100/80 border-emerald-300'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        id={`edit_pgk_opt_${opt.id}`}
+                        checked={opt.isCorrect}
+                        onChange={(e) => {
+                          const updated = pgkOptions.map((o, i) =>
+                            i === idx ? { ...o, isCorrect: e.target.checked } : o
+                          );
+                          setPgkOptions(updated);
+                        }}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer shrink-0"
+                      />
+                      <label
+                        htmlFor={`edit_pgk_opt_${opt.id}`}
+                        className={`w-6 text-center font-mono font-bold text-xs cursor-pointer ${
+                          opt.isCorrect ? 'text-emerald-900' : 'text-slate-600'
+                        }`}
+                      >
+                        {opt.id}
+                      </label>
+                      <input
+                        type="text"
+                        value={opt.label}
+                        onChange={(e) => {
+                          const updated = pgkOptions.map((o, i) =>
+                            i === idx ? { ...o, label: e.target.value } : o
+                          );
+                          setPgkOptions(updated);
+                        }}
+                        placeholder={`Teks pilihan ${opt.id}...`}
+                        className="flex-1 text-xs px-2.5 py-1 bg-white border border-slate-200 rounded"
+                      />
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                          opt.isCorrect
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {opt.isCorrect ? 'BENAR (Kunci)' : 'Salah'}
+                      </span>
+                      {pgkOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPgkOptions(pgkOptions.filter((_, i) => i !== idx));
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                          title="Hapus opsi ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
+                  💡 <strong>Kunci Terpilih: </strong>
+                  <strong className="text-emerald-700 font-mono">
+                    {pgkOptions.filter((o) => o.isCorrect).map((o) => o.id).join(', ') || 'Belum ada (Pilih minimal 1)'}
+                  </strong>
+                  <span className="text-slate-400 text-[10px] block mt-0.5">
+                    Siswa dinilai proporsional menggunakan Partial Credit Model (PCM).
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Benar / Salah (BS) Statement Editor */}
+            {activeType === 'bs' && (
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-900">
+                    Pernyataan Benar / Salah (BS)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextId = `s_${Date.now()}`;
+                      setBsStatements([
+                        ...bsStatements,
+                        { id: nextId, statement: `Pernyataan #${bsStatements.length + 1}`, correctAnswer: true },
+                      ]);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded-lg"
+                  >
+                    + Tambah Pernyataan
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {bsStatements.map((stmt, idx) => (
+                    <div key={stmt.id} className="flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200">
+                      <span className="text-xs font-mono font-bold text-slate-600">#{idx + 1}</span>
+                      <input
+                        type="text"
+                        value={stmt.statement}
+                        onChange={(e) => {
+                          const updated = bsStatements.map((s, i) =>
+                            i === idx ? { ...s, statement: e.target.value } : s
+                          );
+                          setBsStatements(updated);
+                        }}
+                        className="flex-1 text-xs px-2.5 py-1 border border-slate-200 rounded"
+                        placeholder="Isi teks pernyataan..."
+                      />
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = bsStatements.map((s, i) =>
+                              i === idx ? { ...s, correctAnswer: true } : s
+                            );
+                            setBsStatements(updated);
+                          }}
+                          className={`px-2 py-0.5 text-xs font-bold rounded ${
+                            stmt.correctAnswer ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          Benar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = bsStatements.map((s, i) =>
+                              i === idx ? { ...s, correctAnswer: false } : s
+                            );
+                            setBsStatements(updated);
+                          }}
+                          className={`px-2 py-0.5 text-xs font-bold rounded ${
+                            !stmt.correctAnswer ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          Salah
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Isian Singkat */}
+            {activeType === 'isian' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Kunci Jawaban Isian Singkat (Pisahkan dengan koma jika ada alternatif kata)
+                </label>
+                <input
+                  type="text"
+                  value={isianAnswers}
+                  onChange={(e) => setIsianAnswers(e.target.value)}
+                  placeholder="Contoh: fotosintesis, fotosintesa, fotosintesis tumbuhan"
+                  className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg"
+                />
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="math_eq_chk"
+                    checked={isianMathEq}
+                    onChange={(e) => setIsianMathEq(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300"
+                  />
+                  <label htmlFor="math_eq_chk" className="text-xs text-slate-700 cursor-pointer">
+                    Aktifkan toleransi ekuivalensi matematika (misal: "0,5" = "1/2" = "50%" = "setengah")
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Hitungan */}
+            {activeType === 'hitungan' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Rumus Acuan</label>
+                  <input
+                    type="text"
+                    value={mathFormula}
+                    onChange={(e) => setMathFormula(e.target.value)}
+                    placeholder="misal: v = s / t"
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hasil Akhir Target</label>
+                  <input
+                    type="text"
+                    value={mathFinal}
+                    onChange={(e) => setMathFinal(e.target.value)}
+                    placeholder="misal: 5 m/s"
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-emerald-700"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Esai */}
+            {activeType === 'esai' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Model Jawaban / Konsep Kunci Acuan Penilaian
+                </label>
+                <textarea
+                  rows={3}
+                  value={essayAnswer}
+                  onChange={(e) => setEssayAnswer(e.target.value)}
+                  placeholder="Tuliskan poin-poin konsep esensial yang diharapkan muncul pada jawaban siswa..."
+                  className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg"
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="px-3 py-1.5 text-xs text-slate-600 bg-slate-100 rounded-md"
+                className="px-3 py-1.5 text-xs text-slate-600 bg-slate-100 rounded-md hover:bg-slate-200"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleSaveQuestion}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-blue-700 rounded-md hover:bg-blue-800"
+                className="px-4 py-1.5 text-xs font-bold text-white bg-blue-700 rounded-md hover:bg-blue-800 shadow-xs"
               >
                 Simpan Perubahan
               </button>
