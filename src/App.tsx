@@ -31,6 +31,7 @@ import { DesktopSidebar } from './components/DesktopSidebar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileProfileHeader } from './components/MobileProfileHeader';
 import { GasBackendModal } from './components/GasBackendModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AlertCircle, CheckCircle2, ArrowRight, Cloud } from 'lucide-react';
 
 export default function App() {
@@ -204,6 +205,10 @@ export default function App() {
 
   // Render Tab Content Component
   const renderTabContent = () => (
+    <ErrorBoundary
+      fallbackTitle="Tampilan Mengalami Kendala Teknis"
+      onReset={() => setActiveTab('config')}
+    >
     <div className="space-y-6">
       {/* VIEW 1: Perangkat Soal & Identitas Asesmen (Dengan Headbar Khusus Fitur) */}
       {activeTab === 'config' && (
@@ -307,6 +312,7 @@ export default function App() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 
   return (
