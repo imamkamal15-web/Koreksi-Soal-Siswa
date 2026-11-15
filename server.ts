@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
@@ -487,17 +487,32 @@ Format Output JSON:
 app.post('/api/gas/proxy', async (req: Request, res: Response) => {
   try {
     const { webAppUrl, action, payload } = req.body;
+    const cleanUrl = typeof webAppUrl === 'string' ? webAppUrl.trim() : '';
 
-    if (!webAppUrl || typeof webAppUrl !== 'string' || !webAppUrl.startsWith('https://script.google.com/')) {
+    if (!cleanUrl || !cleanUrl.startsWith('https://script.google.com/')) {
       return res.status(400).json({
         success: false,
         message: 'URL Google Apps Script tidak valid. Pastikan berformat https://script.google.com/macros/s/.../exec',
       });
     }
 
+    if (cleanUrl.endsWith('/edit') || cleanUrl.includes('/edit?')) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL yang dimasukkan adalah URL Editor (/edit). Salin URL Web App yang berakhiran "/exec" dari menu Terapkan > Kelola penerapan.',
+      });
+    }
+
+    if (cleanUrl.endsWith('/dev') || cleanUrl.includes('/dev?')) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL berakhiran "/dev" hanya untuk uji coba dan butuh login. Gunakan URL Web App berakhiran "/exec".',
+      });
+    }
+
     // Google Apps Script returns a 302 redirect to script.googleusercontent.com
     // Native fetch follows redirects transparently with redirect: 'follow'
-    const gasResponse = await fetch(webAppUrl, {
+    const gasResponse = await fetch(cleanUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
@@ -514,10 +529,35 @@ app.post('/api/gas/proxy', async (req: Request, res: Response) => {
     try {
       responseData = JSON.parse(responseText);
     } catch {
-      responseData = {
-        success: gasResponse.ok,
-        message: responseText.slice(0, 300) || 'Respons dari Google Apps Script bukan format JSON.',
-      };
+      const lower = responseText.toLowerCase();
+      if (gasResponse.status === 404 || lower.includes('sorry, unable to open the file') || lower.includes('page not found')) {
+        responseData = {
+          success: false,
+          message:
+            'URL Web App Google Apps Script tidak ditemukan (404). Pastikan URL berakhiran "/exec" dari hasil Deploy Web App dan masih aktif.',
+        };
+      } else if (
+        lower.includes('accounts.google.com') ||
+        lower.includes('servicelogin') ||
+        lower.includes('sign in') ||
+        lower.includes('masuk - akun google')
+      ) {
+        responseData = {
+          success: false,
+          message:
+            'Google Apps Script meminta login. Pada saat Deploy Web App, pastikan "Siapa yang memiliki akses" dipilih "Siapa saja (Anyone)". (Catatan: jika memakai akun belajar.id dan diblokir admin sekolah, buat Spreadsheet lewat akun Gmail biasa).',
+        };
+      } else if (lower.includes('<!doctype html') || lower.includes('<html')) {
+        responseData = {
+          success: false,
+          message: `Google Apps Script mengembalikan halaman HTML (HTTP ${gasResponse.status}). Pastikan Code.gs sudah di-Deploy ulang sebagai Web App.`,
+        };
+      } else {
+        responseData = {
+          success: gasResponse.ok,
+          message: responseText.slice(0, 300) || 'Respons dari Google Apps Script bukan format JSON.',
+        };
+      }
     }
 
     return res.json(responseData);

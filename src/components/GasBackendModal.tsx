@@ -501,6 +501,7 @@ export const GasBackendModal: React.FC<GasBackendModalProps> = ({
                       <br />• Pilih jenis: <strong>Aplikasi web (Web app)</strong>.
                       <br />• Jalankan sebagai: <strong>Saya (Me)</strong>.
                       <br />• Siapa yang memiliki akses: <strong className="text-emerald-700">Siapa saja (Anyone)</strong>.
+                      <br /><span className="text-[10px] text-amber-700 italic">Catatan akun belajar.id: Jika pilihan &quot;Siapa saja&quot; tidak muncul karena kebijakan admin dinas/sekolah, silakan buat Google Sheet &amp; Apps Script lewat akun @gmail.com pribadi lalu bagikan akses edit Sheet ke akun belajar.id Anda.</span>
                     </p>
                   </div>
                 </div>
@@ -512,7 +513,7 @@ export const GasBackendModal: React.FC<GasBackendModalProps> = ({
                   <div>
                     <strong className="text-slate-900 block">Salin URL &amp; Tempel ke SmartGrader</strong>
                     <p className="text-[11px] text-slate-600 mt-0.5">
-                      Salin URL Web App yang berakhiran <code className="bg-slate-200 px-1 py-0.2 rounded text-indigo-800 font-mono">/exec</code> dan tempelkan ke kolom URL di tab <strong>1. Koneksi Web App</strong>.
+                      Salin URL Web App yang berakhiran <code className="bg-slate-200 px-1 py-0.2 rounded text-indigo-800 font-mono">/exec</code> (bukan <code className="text-rose-700 font-mono">/dev</code> atau <code className="text-rose-700 font-mono">/edit</code>) dan tempelkan ke kolom URL di tab <strong>1. Koneksi Web App</strong>.
                     </p>
                   </div>
                 </div>

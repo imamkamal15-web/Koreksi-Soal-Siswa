@@ -40,7 +40,99 @@ export function saveGasConfig(config: GasConfig): void {
 }
 
 /**
- * Call GAS Web App via server-side proxy to handle Google 302 redirects and CORS safely
+ * Parse raw response text from Google Apps Script (handling HTML login/404 pages gracefully)
+ */
+function parseGasRawResponse(
+  responseText: string,
+  ok: boolean,
+  status: number
+): GasSyncResponse {
+  try {
+    return JSON.parse(responseText) as GasSyncResponse;
+  } catch {
+    const lower = responseText.toLowerCase();
+    if (status === 404 || lower.includes('sorry, unable to open the file') || lower.includes('page not found')) {
+      return {
+        success: false,
+        message:
+          'URL Web App Google Apps Script tidak ditemukan (404). Pastikan URL diakhiri "/exec" (hasil Deploy Aplikasi Web), bukan "/edit" atau "/dev", dan deployment masih aktif.',
+      };
+    }
+    if (
+      lower.includes('accounts.google.com') ||
+      lower.includes('servicelogin') ||
+      lower.includes('sign in') ||
+      lower.includes('masuk - akun google')
+    ) {
+      return {
+        success: false,
+        message:
+          'Google Apps Script meminta login. Pada saat Deploy Web App, pastikan "Siapa yang memiliki akses" dipilih "Siapa saja (Anyone)". (Catatan: akun belajar.id kadang dibatasi admin; jika tidak ada opsi "Siapa saja", buat Spreadsheet lewat akun @gmail.com biasa).',
+      };
+    }
+    if (lower.includes('<!doctype html') || lower.includes('<html')) {
+      return {
+        success: false,
+        message: `Google Apps Script mengembalikan halaman HTML (HTTP ${status}) alih-alih JSON. Pastikan fungsi doGet/doPost pada Code.gs sudah benar dan sudah di-Deploy ulang sebagai Web App.`,
+      };
+    }
+    return {
+      success: ok,
+      message: responseText.slice(0, 300) || `Respons Google Apps Script bukan format JSON (HTTP ${status}).`,
+    };
+  }
+}
+
+/**
+ * Direct browser call to Google Apps Script Web App using CORS-safelisted text/plain
+ * (Works even without Express proxy server, e.g. in Shared App static hosting)
+ */
+async function callGasDirect(
+  cleanUrl: string,
+  action: string,
+  payload: Record<string, any> = {}
+): Promise<GasSyncResponse> {
+  try {
+    const res = await fetch(cleanUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({
+        action,
+        payload,
+      }),
+      redirect: 'follow',
+    });
+
+    const text = await res.text();
+    return parseGasRawResponse(text, res.ok, res.status);
+  } catch (postErr: any) {
+    // For read-only actions, retry with GET query param if POST is blocked
+    if (action === 'PING' || action === 'GET_STUDENTS' || action === 'GET_QUESTIONS') {
+      try {
+        const sep = cleanUrl.includes('?') ? '&' : '?';
+        const getRes = await fetch(`${cleanUrl}${sep}action=${encodeURIComponent(action)}`, {
+          method: 'GET',
+          redirect: 'follow',
+        });
+        const getText = await getRes.text();
+        return parseGasRawResponse(getText, getRes.ok, getRes.status);
+      } catch {
+        // Ignore and fall through to friendly message
+      }
+    }
+
+    return {
+      success: false,
+      message:
+        `Tidak dapat terhubung ke Google Apps Script secara langsung (${postErr?.message || 'CORS/Jaringan'}). Pastikan akses Web App disetel "Siapa saja (Anyone)" dan URL berakhiran "/exec".`,
+    };
+  }
+}
+
+/**
+ * Call GAS Web App via server-side proxy first, with automatic direct browser fallback if proxy is unavailable (e.g. 404 on Shared App URL)
  */
 export async function callGasApi<T = any>(
   webAppUrl: string,
@@ -62,6 +154,20 @@ export async function callGasApi<T = any>(
     };
   }
 
+  if (cleanUrl.endsWith('/edit') || cleanUrl.includes('/edit?')) {
+    return {
+      success: false,
+      message: 'Anda memasukkan URL Editor (/edit). Salin URL Web App yang berakhiran "/exec" dari menu Terapkan (Deploy) > Kelola penerapan.',
+    };
+  }
+
+  if (cleanUrl.endsWith('/dev') || cleanUrl.includes('/dev?')) {
+    return {
+      success: false,
+      message: 'URL berakhiran "/dev" hanya untuk uji coba internal dan memerlukan login Google. Gunakan URL Web App yang berakhiran "/exec".',
+    };
+  }
+
   try {
     const response = await fetch('/api/gas/proxy', {
       method: 'POST',
@@ -75,22 +181,28 @@ export async function callGasApi<T = any>(
       }),
     });
 
+    // If proxy endpoint is not found (404/405) or unavailable on static/shared hosting, fall back to direct browser call
+    if (response.status === 404 || response.status === 405 || response.status === 502 || response.status === 503) {
+      return await callGasDirect(cleanUrl, action, payload);
+    }
+
     if (!response.ok) {
-      const errJson = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        message: errJson.message || `Gagal menghubungi server proxy (${response.status})`,
-      };
+      const errJson = await response.json().catch(() => null);
+      if (errJson && errJson.message) {
+        return {
+          success: false,
+          message: errJson.message,
+        };
+      }
+      // If non-JSON error from proxy, attempt direct call as fallback
+      return await callGasDirect(cleanUrl, action, payload);
     }
 
     const data: GasSyncResponse = await response.json();
     return data;
   } catch (err: any) {
-    console.error('Error invoking GAS proxy:', err);
-    return {
-      success: false,
-      message: err.message || 'Terjadi kesalahan jaringan saat menghubungi Google Apps Script.',
-    };
+    console.warn('GAS proxy unavailable, trying direct browser fetch:', err);
+    return await callGasDirect(cleanUrl, action, payload);
   }
 }
 
