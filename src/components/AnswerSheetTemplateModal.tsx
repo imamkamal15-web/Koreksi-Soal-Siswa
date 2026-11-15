@@ -133,9 +133,9 @@ export const AnswerSheetTemplateModal: React.FC<AnswerSheetTemplateModalProps> =
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-2 border-black p-3 mb-4 bg-slate-50/50 print:bg-transparent">
                 <div className="space-y-2 text-[11px]">
                   <div>
-                    <span className="font-bold text-slate-800 block text-[10px] uppercase">Nama Lengkap Siswa:</span>
-                    <div className="h-7 border-b border-black flex items-center px-2 font-mono font-bold text-sm tracking-widest bg-white print:bg-transparent">
-                      ...........................................................................
+                    <span className="font-bold text-slate-800 block text-[10px] uppercase mb-0.5">Nama Lengkap Siswa:</span>
+                    <div className="h-8 border border-black flex items-center px-2 bg-white print:bg-transparent w-full overflow-hidden">
+                      &nbsp;
                     </div>
                   </div>
 
@@ -269,9 +269,9 @@ export const AnswerSheetTemplateModal: React.FC<AnswerSheetTemplateModalProps> =
 
               {/* KOLOM TANDA TANGAN & SKOR NILAI HASIL SCAN OCR */}
               <div className="grid grid-cols-2 gap-4 border border-black p-3 text-[10px]">
-                <div className="text-center">
+                <div className="text-center flex flex-col items-center justify-end">
                   <p className="text-slate-600 mb-8">Tanda Tangan Peserta Didik,</p>
-                  <p className="font-bold underline">( .................................................... )</p>
+                  <div className="w-40 max-w-full border-b border-black pt-1" />
                 </div>
                 <div className="border-l border-black/40 pl-3 flex items-center justify-between">
                   <div>
