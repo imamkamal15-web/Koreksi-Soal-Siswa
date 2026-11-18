@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from 'express';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,8 +26,15 @@ const ai = new GoogleGenAI({
   },
 });
 
-// Helper for model selection
-const MODEL_NAME = 'gemini-3.8-flash';
+// Helper for model selection (per gemini_api SKILL.md)
+const MODEL_NAME = 'gemini-4-hydrogen';
+
+async function withTimeout<T>(promise: Promise<T>, ms = 6000): Promise<T> {
+  return await Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Gemini request timeout after ${ms}ms`)), ms)),
+  ]);
+}
 
 // API 1: Semantic Essay Assessment (Analytical Rubric & Anti-Fluffing)
 app.post('/api/grader/semantic-essay', async (req: Request, res: Response) => {
@@ -85,10 +92,12 @@ Berikan penilaian objektif dalam format JSON berikut:
 - feedback: string kalimat bahasa Indonesia formal, ramah, membimbing siswa tentang apa yang sudah benar dan apa konsep yang perlu disempurnakan
 - antiFluffingNotes: catatan ringkas guru apakah siswa memahami esensi atau hanya berbasa-basi`;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -112,7 +121,8 @@ Berikan penilaian objektif dalam format JSON berikut:
           required: ['score', 'criteriaScores', 'feedback', 'antiFluffingNotes'],
         },
       },
-    });
+    })
+    );
 
     const parsed = JSON.parse(response.text || '{}');
     const safeScore = Math.min(Math.max(Number(parsed.score) || 0, 0), maxWeight || 10);
@@ -195,10 +205,12 @@ Format Output JSON:
 - errorStep: string (di langkah mana kesalahan terjadi, atau "Tidak ada kesalahan")
 - feedback: string umpan balik konstruktif dalam bahasa Indonesia`;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -212,7 +224,8 @@ Format Output JSON:
           required: ['score', 'isProcessCorrect', 'isFinalCorrect', 'errorStep', 'feedback'],
         },
       },
-    });
+    })
+    );
 
     const parsed = JSON.parse(response.text || '{}');
     const safeScore = Math.min(Math.max(Number(parsed.score) || 0, 0), maxWeight || 10);
@@ -283,13 +296,16 @@ Keluarkan dalam format JSON:
   ]
 }`;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: 'application/json',
+        },
+      })
+    );
 
     const parsed = JSON.parse(response.text || '{}');
     return res.json(parsed);
@@ -367,23 +383,26 @@ Format respons JSON:
   "confidenceNotes": string
 }`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        {
-          inlineData: {
-            mimeType: mimeType,
-            data: cleanBase64,
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: [
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: cleanBase64,
+            },
           },
+          {
+            text: visionPrompt,
+          },
+        ],
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: 'application/json',
         },
-        {
-          text: visionPrompt,
-        },
-      ],
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+      })
+    );
 
     const parsed = JSON.parse(response.text || '{}');
     return res.json({
@@ -463,13 +482,16 @@ Format Output JSON:
   ]
 }`;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: 'application/json',
+        },
+      })
+    );
 
     const parsed = JSON.parse(response.text || '{}');
     return res.json(parsed);

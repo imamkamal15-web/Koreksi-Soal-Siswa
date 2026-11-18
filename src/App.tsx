@@ -149,14 +149,15 @@ export default function App() {
     setIsGrading(true);
     try {
       const results: StudentGradedResult[] = [];
-      for (const sub of submissions) {
-        const studentResult = await gradeStudentSubmission(
-          sub,
-          questions,
-          meta.kkm,
-          meta.weightingScheme
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < submissions.length; i += BATCH_SIZE) {
+        const chunk = submissions.slice(i, i + BATCH_SIZE);
+        const chunkResults = await Promise.all(
+          chunk.map((sub) =>
+            gradeStudentSubmission(sub, questions, meta.kkm, meta.weightingScheme)
+          )
         );
-        results.push(studentResult);
+        results.push(...chunkResults);
       }
 
       setGradedResults(results);
