@@ -150,13 +150,17 @@ export function gradeSinglePG(question: QuestionItem, studentRaw: any): Question
 export function gradePGK(question: QuestionItem, studentRaw: any): QuestionGradingDetail {
   let studentSelections: string[] = [];
   if (Array.isArray(studentRaw)) {
-    studentSelections = studentRaw.map(s => String(s).trim().toUpperCase());
+    studentSelections = Array.from(new Set(studentRaw.map(s => String(s).trim().toUpperCase()).filter(Boolean)));
   } else if (typeof studentRaw === 'string') {
-    studentSelections = studentRaw
-      .toUpperCase()
-      .split(/[,\s;]+/)
-      .map(s => s.replace(/[^A-Z0-9]/g, '').trim())
-      .filter(Boolean);
+    studentSelections = Array.from(
+      new Set(
+        studentRaw
+          .toUpperCase()
+          .split(/[,\s;]+/)
+          .map(s => s.replace(/[^A-Z0-9]/g, '').trim())
+          .filter(Boolean)
+      )
+    );
   }
 
   const options = question.pgkOptions || [];
@@ -225,9 +229,17 @@ export function gradeBS(question: QuestionItem, studentRaw: any): QuestionGradin
         studentAnsVal = u.startsWith('B') || u === 'TRUE' || u === '1';
       }
     } else if (typeof studentRaw === 'string') {
-      const tokens = studentRaw.split(/[,;\s]+/).map(t => t.trim().toUpperCase());
-      if (tokens[idx] !== undefined) {
-        studentAnsVal = tokens[idx].startsWith('B') || tokens[idx] === 'TRUE';
+      const tokens = studentRaw
+        .split(/[,;\s]+/)
+        .map(t => t.trim().toUpperCase())
+        .filter(Boolean);
+      const token = tokens[idx];
+      if (token) {
+        if (token === 'B' || token === 'BENAR' || token === 'TRUE' || token === 'T' || token === '1') {
+          studentAnsVal = true;
+        } else if (token === 'S' || token === 'SALAH' || token === 'FALSE' || token === 'F' || token === '0') {
+          studentAnsVal = false;
+        }
       }
     }
 
@@ -430,7 +442,7 @@ export async function gradeEssayAsync(
       score: safeScore,
       maxScore: question.weight,
       isCorrect: safeScore >= question.weight * 0.7,
-      partialRatio: Math.round((safeScore / question.weight) * 100) / 100,
+      partialRatio: question.weight > 0 ? Math.round((safeScore / question.weight) * 100) / 100 : 0,
       studentAnswerDisplay: `Skor Langsung: ${safeScore} / ${question.weight}`,
       keyAnswerDisplay: question.modelAnswer || 'Koreksi Manual oleh Guru di Kertas',
       feedback: `Nilai uraian dimasukkan langsung oleh guru (${safeScore} dari ${question.weight} poin).`,
@@ -462,7 +474,7 @@ export async function gradeEssayAsync(
         score: data.score,
         maxScore: question.weight,
         isCorrect: data.score >= question.weight * 0.7,
-        partialRatio: Math.round((data.score / question.weight) * 100) / 100,
+        partialRatio: question.weight > 0 ? Math.round((data.score / question.weight) * 100) / 100 : 0,
         studentAnswerDisplay: studentText || '(Kosong)',
         keyAnswerDisplay: question.modelAnswer || 'Rubrik Analitis',
         feedback: data.feedback,
@@ -485,7 +497,7 @@ export async function gradeEssayAsync(
     score,
     maxScore: question.weight,
     isCorrect: score >= question.weight * 0.7,
-    partialRatio: Math.round((score / question.weight) * 100) / 100,
+    partialRatio: question.weight > 0 ? Math.round((score / question.weight) * 100) / 100 : 0,
     studentAnswerDisplay: studentText || '(Kosong)',
     keyAnswerDisplay: question.modelAnswer || 'Rubrik Analitis',
     feedback: hasSubstance ? 'Esai memuat gagasan konsep yang relevan.' : 'Uraian masih terlalu singkat.',
@@ -513,7 +525,7 @@ export async function gradeMathProcessAsync(
       score: directScore,
       maxScore: question.weight,
       isCorrect: directScore >= question.weight * 0.7,
-      partialRatio: Math.round((directScore / question.weight) * 100) / 100,
+      partialRatio: question.weight > 0 ? Math.round((directScore / question.weight) * 100) / 100 : 0,
       studentAnswerDisplay: `Skor Langsung: ${directScore} / ${question.weight}`,
       keyAnswerDisplay: `Hasil: ${question.mathFinalAnswer || '-'}`,
       feedback: `Nilai hitungan dimasukkan langsung oleh guru (${directScore} dari ${question.weight} poin).`,
@@ -544,7 +556,7 @@ export async function gradeMathProcessAsync(
         score: data.score,
         maxScore: question.weight,
         isCorrect: data.isFinalCorrect,
-        partialRatio: Math.round((data.score / question.weight) * 100) / 100,
+        partialRatio: question.weight > 0 ? Math.round((data.score / question.weight) * 100) / 100 : 0,
         studentAnswerDisplay: studentWork || '(Kosong)',
         keyAnswerDisplay: `Rumus: ${question.mathFormula || '-'} | Hasil: ${question.mathFinalAnswer || '-'}`,
         feedback: data.feedback,
@@ -565,7 +577,7 @@ export async function gradeMathProcessAsync(
     score,
     maxScore: question.weight,
     isCorrect: isFinalCorrect,
-    partialRatio: Math.round((score / question.weight) * 100) / 100,
+    partialRatio: question.weight > 0 ? Math.round((score / question.weight) * 100) / 100 : 0,
     studentAnswerDisplay: studentWork || '(Kosong)',
     keyAnswerDisplay: `Hasil: ${question.mathFinalAnswer || '-'}`,
     feedback: isFinalCorrect ? 'Perhitungan dan hasil akhir tepat.' : 'Langkah terdeteksi, periksa kalkulasi akhir.',
@@ -753,7 +765,11 @@ export async function gradeStudentSubmission(
   const questionScores: Record<string, QuestionGradingDetail> = {};
 
   for (const q of questions) {
-    const rawVal = submission.answers[q.id] ?? submission.answers[String(q.number)];
+    const rawVal =
+      submission.answers[q.id] ??
+      submission.answers[String(q.number)] ??
+      submission.answers[`q_${q.number}`] ??
+      submission.answers[`q${q.number}`];
 
     let detail: QuestionGradingDetail;
     switch (q.type) {

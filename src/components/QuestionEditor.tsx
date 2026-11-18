@@ -828,7 +828,7 @@ export const QuestionEditor: React.FC<QuestionEditorProps> = ({ questions, onCha
                   q.type === 'pg'
                     ? q.correctOption || 'A'
                     : q.type === 'pgk'
-                    ? q.pgkOptions?.filter(o => o.isCorrect).map(o => o.id).join(',') || 'A,C'
+                    ? (q.pgkOptions ? q.pgkOptions.filter(o => o.isCorrect).map(o => o.id).join(',') : 'A,C')
                     : q.type === 'bs'
                     ? q.bsStatements?.map(s => s.correctAnswer ? 'B' : 'S').join(',') || 'B,S'
                     : q.type === 'isian'

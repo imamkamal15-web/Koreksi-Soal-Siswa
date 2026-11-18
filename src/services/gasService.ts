@@ -228,12 +228,26 @@ export async function pullStudentsFromGas(webAppUrl: string): Promise<{
   }
 
   const rawStudents = res.data?.students || [];
-  const mapped: StudentSubmission[] = rawStudents.map((s: any, idx: number) => ({
-    id: s.id || `gas_std_${Date.now()}_${idx}`,
-    nisn: String(s.nisn || `008123450${idx + 1}`),
-    name: s.name || `Siswa #${idx + 1}`,
-    answers: s.answers || {},
-  }));
+  const mapped: StudentSubmission[] = rawStudents.map((s: any, idx: number) => {
+    const rawAns = s.answers && typeof s.answers === 'object' ? s.answers : {};
+    const normalizedAns: Record<string, string> = {};
+    Object.entries(rawAns).forEach(([k, v]) => {
+      const val = String(v ?? '');
+      normalizedAns[k] = val;
+      const numMatch = k.match(/^q_?(\d+)$/i);
+      if (numMatch) {
+        normalizedAns[numMatch[1]] = val;
+        normalizedAns[`q_${numMatch[1]}`] = val;
+        normalizedAns[`q${numMatch[1]}`] = val;
+      }
+    });
+    return {
+      id: s.id || `gas_std_${Date.now()}_${idx}`,
+      nisn: String(s.nisn || `008123450${idx + 1}`),
+      name: s.name || `Siswa #${idx + 1}`,
+      answers: normalizedAns,
+    };
+  });
 
   return {
     success: true,

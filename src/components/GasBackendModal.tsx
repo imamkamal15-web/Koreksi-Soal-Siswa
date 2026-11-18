@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GAS_SCRIPT_TEMPLATE,
   testGasConnection,
@@ -73,6 +73,19 @@ export const GasBackendModal: React.FC<GasBackendModalProps> = ({
 
   const [copiedScript, setCopiedScript] = useState(false);
   const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setUrlInput(gasConfig.webAppUrl || '');
+      setTestResult({
+        status: gasConfig.isConnected ? 'success' : 'idle',
+        message: gasConfig.isConnected
+          ? `Terhubung ke "${gasConfig.spreadsheetName || 'Google Spreadsheet'}"`
+          : '',
+        spreadsheetName: gasConfig.spreadsheetName,
+      });
+    }
+  }, [isOpen, gasConfig.webAppUrl, gasConfig.isConnected, gasConfig.spreadsheetName]);
 
   if (!isOpen) return null;
 
@@ -174,13 +187,27 @@ export const GasBackendModal: React.FC<GasBackendModalProps> = ({
     }
   };
 
-  // Copy Code.gs script
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(GAS_SCRIPT_TEMPLATE).then(() => {
+  // Copy Code.gs script (with fallback for restricted iframe clipboard contexts)
+  const handleCopyScript = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(GAS_SCRIPT_TEMPLATE);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = GAS_SCRIPT_TEMPLATE;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
       setCopiedScript(true);
       setTimeout(() => setCopiedScript(false), 3000);
       onShowToast('success', 'Skrip Code.gs berhasil disalin ke clipboard!');
-    });
+    } catch {
+      onShowToast('error', 'Gagal menyalin otomatis. Silakan blok dan salin skrip secara manual.');
+    }
   };
 
   return (

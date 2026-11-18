@@ -168,11 +168,38 @@ NISN: 0081234511
       }
     }
 
-    const headerCols = validLines[headerIdx].split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    // Quote-aware CSV row splitter so "A, C" doesn't split when comma delimiter is used
+    const splitCsvLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === delimiter && !inQuotes) {
+          result.push(current.trim().replace(/^["']|["']$/g, ''));
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim().replace(/^["']|["']$/g, ''));
+      return result;
+    };
+
+    const headerCols = splitCsvLine(validLines[headerIdx]);
     let nameColIdx = headerCols.findIndex(c => c.toLowerCase().includes('nama'));
-    let nisnColIdx = headerCols.findIndex(c => c.toLowerCase().includes('nisn'));
+    const explicitNisnIdx = headerCols.findIndex(c => c.toLowerCase().includes('nisn'));
+    const firstSoalIdx = headerCols.findIndex(c => /^(soal|q\s*\d+)/i.test(c.trim()));
+
     if (nameColIdx === -1) nameColIdx = 0;
-    if (nisnColIdx === -1) nisnColIdx = 1;
+    const nisnColIdx =
+      explicitNisnIdx !== -1
+        ? explicitNisnIdx
+        : firstSoalIdx === -1 || firstSoalIdx > 1
+        ? 1
+        : -1;
 
     const dataLines = validLines.slice(headerIdx + 1);
     const newStudents: StudentSubmission[] = [];
@@ -180,14 +207,14 @@ NISN: 0081234511
     dataLines.forEach((line, rowIdx) => {
       if (line.toLowerCase().includes('contoh') || line.toLowerCase().includes('petunjuk')) return;
 
-      const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+      const cols = splitCsvLine(line);
       if (cols.length < 2) return;
 
       const name = cols[nameColIdx] || `Siswa ${rowIdx + 1}`;
-      const nisn = cols[nisnColIdx] || `008123450${rowIdx + 1}`;
+      const nisn = nisnColIdx !== -1 && cols[nisnColIdx] ? cols[nisnColIdx] : `008123450${rowIdx + 1}`;
 
       const answers: Record<string, any> = {};
-      const answerStart = Math.max(nameColIdx, nisnColIdx) + 1;
+      const answerStart = firstSoalIdx !== -1 ? firstSoalIdx : Math.max(nameColIdx, nisnColIdx) + 1;
 
       questions.forEach((q, qIdx) => {
         const val = cols[answerStart + qIdx] !== undefined ? cols[answerStart + qIdx] : '';
@@ -208,6 +235,7 @@ NISN: 0081234511
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
     const reader = new FileReader();
@@ -315,10 +343,42 @@ NISN: 0081234511
     ];
 
     const clipboardText = headers.join('\t') + '\n' + sampleRow.join('\t');
-    navigator.clipboard.writeText(clipboardText).then(() => {
+    const onCopied = () => {
       setCopiedClipboard(true);
       setTimeout(() => setCopiedClipboard(false), 3000);
-    });
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(clipboardText).then(onCopied).catch(() => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = clipboardText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          onCopied();
+        } catch {
+          // ignore
+        }
+      });
+    } else {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = clipboardText;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        onCopied();
+      } catch {
+        // ignore
+      }
+    }
   };
 
   // Add a blank row to the table
@@ -668,7 +728,12 @@ NISN: 0081234511
 
                       {/* Sel Masing-Masing Nomor Soal (Kolom Sendiri) */}
                       {questions.map((q) => {
-                        const rawVal = sub.answers[q.id] ?? sub.answers[String(q.number)] ?? '';
+                        const rawVal =
+                          sub.answers[q.id] ??
+                          sub.answers[String(q.number)] ??
+                          sub.answers[`q_${q.number}`] ??
+                          sub.answers[`q${q.number}`] ??
+                          '';
                         const displayVal = Array.isArray(rawVal)
                           ? rawVal.join(', ')
                           : typeof rawVal === 'object' && rawVal !== null

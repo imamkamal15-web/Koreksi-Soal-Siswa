@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudentGradedResult, QuestionItem, QuestionGradingDetail, WeightingScheme } from '../types/grader';
 import { calculateStudentTotals } from '../services/graderEngine';
 import { X, Check, Undo2, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
@@ -22,14 +22,20 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
   onClose,
   onSaveOverride,
 }) => {
+  // Hooks MUST always be called unconditionally at the top of the component
+  const [localScores, setLocalScores] = useState<Record<string, QuestionGradingDetail>>(
+    student ? { ...student.questionScores } : {}
+  );
+  const [personalNotes, setPersonalNotes] = useState(student?.personalFeedbackNotes || '');
+
+  useEffect(() => {
+    if (isOpen && student) {
+      setLocalScores({ ...student.questionScores });
+      setPersonalNotes(student.personalFeedbackNotes || '');
+    }
+  }, [isOpen, student]);
+
   if (!isOpen || !student) return null;
-
-  // Local state for modified question details
-  const [localScores, setLocalScores] = useState<Record<string, QuestionGradingDetail>>({
-    ...student.questionScores,
-  });
-
-  const [personalNotes, setPersonalNotes] = useState(student.personalFeedbackNotes || '');
 
   // Calculate live preview totals
   const liveTotals = calculateStudentTotals(
@@ -47,7 +53,8 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
     const current = localScores[qId];
     if (!current) return;
 
-    const clamped = Math.max(0, Math.min(current.maxScore, Math.round(newScore * 10) / 10));
+    const safeMax = current.maxScore > 0 ? current.maxScore : 1;
+    const clamped = Math.max(0, Math.min(current.maxScore, Math.round((Number.isFinite(newScore) ? newScore : 0) * 10) / 10));
     const wasOverridden = current.originalScore !== undefined ? current.originalScore !== clamped : current.score !== clamped;
 
     setLocalScores({
@@ -55,8 +62,8 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
       [qId]: {
         ...current,
         score: clamped,
-        partialRatio: Math.round((clamped / current.maxScore) * 100) / 100,
-        isCorrect: clamped >= current.maxScore * 0.7,
+        partialRatio: Math.round((clamped / safeMax) * 100) / 100,
+        isCorrect: clamped >= safeMax * 0.7,
         isOverridden: wasOverridden,
         originalScore: current.originalScore ?? current.score,
         overrideReason: current.overrideReason || 'Penyesuaian manual oleh Guru Mata Pelajaran',
@@ -81,13 +88,14 @@ export const StudentOverrideDrawer: React.FC<StudentOverrideDrawerProps> = ({
     const current = localScores[qId];
     if (!current || current.originalScore === undefined) return;
 
+    const safeMax = current.maxScore > 0 ? current.maxScore : 1;
     setLocalScores({
       ...localScores,
       [qId]: {
         ...current,
         score: current.originalScore,
-        partialRatio: Math.round((current.originalScore / current.maxScore) * 100) / 100,
-        isCorrect: current.originalScore >= current.maxScore * 0.7,
+        partialRatio: Math.round((current.originalScore / safeMax) * 100) / 100,
+        isCorrect: current.originalScore >= safeMax * 0.7,
         isOverridden: false,
         overrideReason: undefined,
       },
